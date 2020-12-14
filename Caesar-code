@@ -1,0 +1,90 @@
+let fs = require('fs');
+//строка считывается из input.txt, который находится в папке с кодом
+inputStr = fs.readFileSync('text.txt');
+inputStr = inputStr.toString();
+//тут можно изменить величину сдвига (shift)
+let shift = 6;
+console.log('Величина сдвига (заданная): ', shift);
+shift = shift % 26;
+let outputStr = '';
+//Кодировка текста
+for (let i = 0; i < inputStr.length; i++){
+	let smbl = inputStr[i];
+	let smblCode = inputStr[i].charCodeAt();
+	if (smblCode >= 65 && smblCode<= 90){
+		if (smblCode+shift > 90)
+			smbl = String.fromCharCode(65 + (smblCode+shift)%91); 
+		else
+			smbl = String.fromCharCode(smblCode+shift);
+	}
+	if (smblCode >= 97 && smblCode<= 122){
+		if (smblCode+shift > 122)
+			smbl = String.fromCharCode(97 + (smblCode+shift)%123); 
+		else
+			smbl = String.fromCharCode(smblCode+shift);
+	}
+	outputStr += smbl;
+}
+//закодированный текст записывается в файл codetext.txt, который находится в папке с кодом
+fs.writeFileSync('codetext.txt', outputStr, { mode: 0o755 });
+//Поиск сдвига
+let frequencyDictionary  = [8.17, 1.49, 2.78, 4.25, 12.7, 2.23, 2.02, 6.09, 6.97, 0.15, 0.77, 4.03, 2.41, 6.75, 7.51, 1.93, 0.1, 5.99, 6.33, 9.06, 2.76, 0.98, 2.36, 0.15, 1.97, 0.05];
+console.log('Массив частот букв в алфавите ', frequencyDictionary);
+let codeStr = fs.readFileSync('codetext.txt');
+codeStr	= codeStr.toString();
+let frequencyDictionaryCode = [];
+for (let i = 0; i < 26; i++){
+	frequencyDictionaryCode.push(0);
+}
+let counter = 0;
+for (let i = 0; i < codeStr.length; i++){
+	let smbl = codeStr[i];
+	let smblCode = codeStr[i].charCodeAt();
+	if (smblCode >= 65 && smblCode<= 90){
+		let x = smblCode%65;
+		frequencyDictionaryCode[x] += 1;
+		counter++;
+	}
+	if (smblCode >= 97 && smblCode<= 122){
+		let x = smblCode%97;
+		frequencyDictionaryCode[x] += 1;
+		counter++;
+	}
+}
+for (let i = 0; i < 26; i++){
+	frequencyDictionaryCode[i] = parseFloat((frequencyDictionaryCode[i]*100/counter).toFixed(2));
+}
+console.log('Массив полученных частот', frequencyDictionaryCode);
+let shiftFound = 0;
+let function1 = 1000;
+for (let k = 0; k < 26; k++){
+	let sum = 0;
+	for (let i = 0; i < 26; i++){
+		sum += (frequencyDictionary[i] - frequencyDictionaryCode[(i+k)%26])*(frequencyDictionary[i] - frequencyDictionaryCode[(i+k)%26]);
+	}
+	if (sum < function1){
+		shiftFound = k;
+		function1 = sum;
+	}
+}
+console.log('Сдвиг шифра (найденный): ', shiftFound);
+//Декодировка файла по найденному сдвигу
+let decodeStr = '';
+for (let i = 0; i < codeStr.length; i++){
+	let smbl = codeStr[i];
+	let smblCode = codeStr[i].charCodeAt();
+	if (smblCode >= 65 && smblCode<= 90){
+		if (smblCode-shiftFound < 65)
+			smbl = String.fromCharCode(91 - shiftFound); 
+		else
+			smbl = String.fromCharCode(smblCode-shiftFound);
+	}
+	if (smblCode >= 97 && smblCode<= 122){
+		if (smblCode-shiftFound < 97)
+			smbl = String.fromCharCode(123-shiftFound); 
+		else
+			smbl = String.fromCharCode(smblCode-shiftFound);
+	}
+	decodeStr += smbl;
+}
+fs.writeFileSync('decodetext.txt', decodeStr, { mode: 0o755 });
